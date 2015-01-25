@@ -81,15 +81,38 @@ Board.prototype.isValidSwap = Board.prototype.isValid = function(t1, t2){
 		return false;
 	}
 	else {
-		return this.operatesToTarget(t1) || this.operatesToTarget(t2);
+		return this.operatesToTarget(t1, t2) || this.operatesToTarget(t2, t1);
 	}
 }
 
-Board.prototype.operatesToTarget = Board.prototype.operates = function(tuple, target, operation, board){
+Board.prototype.operatesToTarget = Board.prototype.operates = function(currentTuple, proposedTuple target, operation, board){
+	target = target || this.target;
+	operation = operation || this.operation;
+	board = board || this.board;
+	var tuple = currentTuple;
+	return !!this.isMatch(tuple, proposedTuple).length
+}
+
+Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2){
+	if (!t1 || !t2){throw new Error ('cannot call sway without two tuples')}
+	if (typeof t1 !== 'object' || typeof t2 !== 'object'){throw new Error ('cannot call sway without two tuples')}
+	if (!!t1.length || !!t2.length){throw new Error ('cannot call sway without two tuples')}
+	if (t1.length !== 2 || t2.length !== 2){throw new Error ('cannot call sway without two tuples')}
+
+	if (!this.isValidSwap(t1,t2)) {
+		throw new Error ('has inValid swap. Call the isValidSwap fn before calling swap.')
+	}
+
+	
+
+}
+
+Board.prototype.idMatches = function(currentTuple, proposedTuple, target, operation, board) {
 	target = target || this.target;
 	operation = operation || this.operation;
 	board = board || this.board;
 
+	var tuple = currentTuple;
 	var neighbors = [];
 	neighbors.push([tuple[0] + 1, tuple[1]]);
 	neighbors.push([tuple[0] - 1, tuple[1]]);
@@ -100,11 +123,11 @@ Board.prototype.operatesToTarget = Board.prototype.operates = function(tuple, ta
 		return this.isInBounds(e);
 	});
 
-	return neighbors.some(function(e) {
+	return neighbors.filter(function(e) {
 		var a = this.getVal(e);
-		var b = this.getVal(tuple);
+		var b = this.getVal(proposedTuple);
 		return this.op(a,b) === target;
-	})
+	}).concat([tuple]);
 }
 
 Board.prototype.d3ify = function(){
