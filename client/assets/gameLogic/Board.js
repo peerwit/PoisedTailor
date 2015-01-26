@@ -33,11 +33,6 @@ Board.prototype.create = function(m, n, operation, difficulty) {
 
 // };
 
-
-Board.prototype.getValueAtTuple = Board.prototype.getVal =  function(tuple){
-	return this.board[tuple[0]][tuple[1]];
-}
-
 Board.prototype.generateRandom = Board.prototype.ran = function() {
 	var range = this.range;
 	var target = this.target;
@@ -54,58 +49,66 @@ Board.prototype.isInBounds = function(tuple, board) {
 
 // Pass in two arrays t1 = [i1, j1] &&  t2 = [i2, j2]
 Board.prototype.isValidSwap = Board.prototype.isValid = function(t1, t2){
-	// are t1 && t2 neighbors ? continue; break;
 	if (!this.isInBounds(t1) || !this.isInBounds(t2)) {
 		return false;
 	}
-	else {
-		return this.operatesToTarget(t1, t2) || this.operatesToTarget(t2, t1);
-	}
+	// console.log(this._getNeighbors(t2), t1)
+	// if (this._getNeighbors(t2).indexOf(t1) === -1) {
+	// 	return false;
+	// }
+	// console.log(t1,t2);
+	return this.operatesToTarget(t1, t2);
 }
 
-Board.prototype.operatesToTarget = Board.prototype.operates = function(currentTuple, proposedTuple, target, operation, board){
+Board.prototype.operatesToTarget = Board.prototype.operates = function(t1, t2, target, operation, board){
 	target = target || this.target;
 	operation = operation || this.operation;
 	board = board || this.board;
-	var tuple = currentTuple;
-	return !!this.isMatch(tuple, proposedTuple).length
+	var that = this;
+	var val1 = this._get(t1);
+	var val2 = this._get(t2);
+	var n1 = this._getNeighbors(t1);
+	var n2 = this._getNeighbors(t2);
+	console.log(n1,n2,val1,val2);
+	var flag = n1.some(function(e) {
+		return operation(val2, that._get(e)) === target;
+	});
+	if (flag) {return flag}
+	flag = n2.some(function(e) {
+		return operation(val1, that._get(e)) === target;
+	})
+	if (flag) {return flag}
+	return false;
 }
 
-Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2){
+Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2, cb){
 	if (!t1 || !t2){throw new Error ('cannot call swap without two tuples')}
 	if (typeof t1 !== 'object' || typeof t2 !== 'object'){throw new Error ('cannot call swap without two tuples')}
-	if (!!t1.length || !!t2.length){throw new Error ('cannot call swap without two tuples')}
+	if (!t1.length || !t2.length){throw new Error ('cannot call swap without two tuples')}
 	if (t1.length !== 2 || t2.length !== 2){throw new Error ('cannot call swap without two tuples')}
 
 	if (!this.isValidSwap(t1,t2)) {
 		throw new Error ('has inValid swap. Call the isValidSwap fn before calling swap.')
 	}
+	cb = cb || function(){};
+	var array = this.idMatches(t1, t2).concat(this.idMatches(t2,t1));
 
-	return this.idMatches(t1)
-
+	cb(array);
+	return array;
 }
 
 Board.prototype.idMatches = function(currentTuple, proposedTuple, target, operation, board) {
 	target = target || this.target;
 	operation = operation || this.operation;
 	board = board || this.board;
-
+	var that = this;
 	var tuple = currentTuple;
-	var neighbors = [];
-	neighbors.push([tuple[0] + 1, tuple[1]]);
-	neighbors.push([tuple[0] - 1, tuple[1]]);
-	neighbors.push([tuple[0], tuple[1] - 1]);
-	neighbors.push([tuple[0], tuple[1] + 1]);
-
-	neighbors = neighbors.filter(function(e) {
-		return this.isInBounds(e);
-	});
-
-	return neighbors.filter(function(e) {
-		var a = this.getVal(e);
-		var b = this.getVal(proposedTuple);
-		return this.op(a,b) === target;
+	var rA = this._getNeighbors(currentTuple).filter(function(e) {
+		var a = that._get(e);
+		var b = that._get(proposedTuple);
+		return that.op(a,b) === target;
 	}).concat([tuple]);
+	return rA.length < 2 ? [] : rA;
 }
 
 Board.prototype.d3ify = function(){
@@ -119,6 +122,15 @@ Board.prototype.d3ify = function(){
 
 
 // private methods not intended to be called directly
+Board.prototype._get = function(tuple) {
+	return this.board[tuple[0]][tuple[1]];
+}
+
+Board.prototype._set = function(tuple, val) {
+	this.board[tuple[0]][tuple[1]] = val;
+	return true;
+}
+
 Board.prototype._makeBoard = function(m,n) {
 	var board = [];
 	for(var i = 0; i < m; i++) {
@@ -289,9 +301,29 @@ Board.prototype._removeMatches = function() {
 	this._iterate(this._updateIfMatch.bind(this));
 }
 
+
+
+var readline = require('readline');
+
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+rl.question("", function(tuples) {
+	var a = tuples.split(":::")
+	var t1 = JSON.parse(a.shift());
+	var t2 = JSON.parse(a.shift());
+	console.log(!!t1.length,t2, typeof t1);
+	console.log("IS VALID", b1.isValidSwap(t1,t2));
+	b1.swap(t1,t2,console.log);
+	rl.close();
+});
+
 // ----
 var b1 = new Board().create();
-console.log(b1.state);
+console.log(b1.state, "+++");
+// b1.swap([0,0],[0,1])
 
 
 
