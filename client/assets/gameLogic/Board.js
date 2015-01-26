@@ -1,9 +1,26 @@
 // Simple Boards implementation by Pranay and Alex Tseung
 	// v 0.0.1 (01/23/15)
 
-var Board = function() {
+// BOARD CLASS - gives you a new playable board
+var Board = function(m, n, operation, difficulty) {
 	this.state = this.board = [[]];
+	this.create(m, n, operation, difficulty);
 }
+
+// Takes a string or an array and gets board attributes
+// WILL mutate array
+Board.prototype.get = function(attr) {
+	var that = this;
+	if (typeof attr === 'string'){
+		return this[attr];
+	}
+	else if (typeof attr === 'object' && Array.isArray(attr)){
+		return attr.map(function(e) {
+			return this[e];
+		}.bind(this));
+	}
+}
+
 	
 Board.prototype.operationsList = Board.prototype.opsList = {
 	add:function (a, b){return a + b},
@@ -24,6 +41,26 @@ Board.prototype.create = function(m, n, operation, difficulty) {
 	this.diff = this.difficulty = difficulty || this.diff || 1;
 	this.state = this.board = this._makeBoard(this.rows, this.cols);
 	return this;
+}
+
+Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2, cb){
+	if (!t1 || !t2){throw new Error ('cannot call swap without two tuples')}
+	if (typeof t1 !== 'object' || typeof t2 !== 'object'){throw new Error ('cannot call swap without two tuples')}
+	if (!t1.length || !t2.length){throw new Error ('cannot call swap without two tuples')}
+	if (t1.length !== 2 || t2.length !== 2){throw new Error ('cannot call swap without two tuples')}
+
+	if (!this.isValidSwap(t1,t2)) {
+		throw new Error ('has inValid swap. Call the isValidSwap fn before calling swap.')
+	}
+	cb = cb || function(){};
+	var array = this.idMatches(t1, t2).concat(this.idMatches(t2,t1));
+
+	var temp = this._get(t1);
+	this._set(t1, this._get(t2));
+	this._set(t2, temp);
+
+	cb(array);
+	return array;
 }
 
 // Come back to if time allows
@@ -53,6 +90,7 @@ Board.prototype.isValidSwap = Board.prototype.isValid = function(t1, t2){
 		return false;
 	}
 	// console.log(this._getNeighbors(t2), t1)
+
 	// if (this._getNeighbors(t2).indexOf(t1) === -1) {
 	// 	return false;
 	// }
@@ -80,25 +118,6 @@ Board.prototype.operatesToTarget = Board.prototype.operates = function(t1, t2, t
 	return false;
 }
 
-Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2, cb){
-	if (!t1 || !t2){throw new Error ('cannot call swap without two tuples')}
-	if (typeof t1 !== 'object' || typeof t2 !== 'object'){throw new Error ('cannot call swap without two tuples')}
-	if (!t1.length || !t2.length){throw new Error ('cannot call swap without two tuples')}
-	if (t1.length !== 2 || t2.length !== 2){throw new Error ('cannot call swap without two tuples')}
-
-	if (!this.isValidSwap(t1,t2)) {
-		throw new Error ('has inValid swap. Call the isValidSwap fn before calling swap.')
-	}
-	cb = cb || function(){};
-	var array = this.idMatches(t1, t2).concat(this.idMatches(t2,t1));
-
-	var temp = this._get(t1);
-	this._set(t1, this._get(t2));
-	this._set(t2, temp);
-
-	cb(array);
-	return array;
-}
 
 Board.prototype.idMatches = function(currentTuple, proposedTuple, target, operation, board) {
 	target = target || this.target;
@@ -329,15 +348,24 @@ rl.question("", function(tuples) {
 	var t2 = JSON.parse(a.shift());
 	console.log("IS VALID", b1.isValidSwap(t1,t2));
 	b1.swap(t1,t2,b1._regenConsumedNodes.bind(b1));
-	console.log(b1.state);
+	console.log(b1.get(['state', 'target']));
 	rl.close();
 });
 
 // ----
-var b1 = new Board().create();
+var b1 = new Board();
 
-console.log(b1.state, "+++");
+console.log(b1.get('state'), "+++");
 // b1.swap([0,0],[0,1])
+
+
+
+/* How to use the board api..
+
+Instantiate a new Board (new Board())
+
+*/
+
 
 
 
