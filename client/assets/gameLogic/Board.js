@@ -18,10 +18,10 @@ Board.prototype.operationsList = Board.prototype.opsList = {
 }
 
 Board.prototype.create = function(m, n, operation, difficulty) {
-	this.rows = m || 12;
-	this.cols = n || 6;
-	this.op = this.operation = operation || this.opsList.add;
-	this.diff = this.difficulty = difficulty || 1;
+	this.rows = m || this.rows || 12;
+	this.cols = n || this.cols || 6;
+	this.op = this.operation = operation || this.op || this.opsList.add;
+	this.diff = this.difficulty = difficulty || this.diff || 1;
 	this.state = this.board = this._makeBoard(this.rows, this.cols);
 	return this;
 }
@@ -129,7 +129,40 @@ Board.prototype._makeBoard = function(m,n) {
 	}
 	this.state = this.board = board;
 	this._init();
+	this._removeMatches();
+	this._isPlayable()?console.log("playable"):this._refresh();
 	return board;
+}
+
+Board.prototype._isPlayable = function() {
+	var that = this, grandFlag = false;
+	this._iterateWithBreak(bfs2.bind(that));
+	return grandFlag;
+
+	function bfs2(tuple) {
+		var target = this.target;
+		var board = this.state;
+		var op = this.op;
+		var neighbors = this._getNeighbors(tuple);
+		var that = this;
+		var val = board[tuple[0]][tuple[1]];
+		console.log(val);
+		var flag = neighbors.some(function(e) {
+			var n2s = that._getNeighbors(e);
+			return n2s.some(function(n2e) {
+				return op(val, board[n2e[0]][n2e[1]]) === target;
+			})
+		})
+		console.log(flag);
+		if (flag) {
+			grandFlag = true;
+		}
+		return !flag;
+	}
+}
+
+Board.prototype._refresh = function() {
+	this.create();
 }
 
 Board.prototype._setBoardInit = Board.prototype._init =  function(min, max){
@@ -153,6 +186,16 @@ Board.prototype._iterate = Board.prototype._each = function(cb) {
 	}
 }
 
+Board.prototype._iterateWithBreak = Board.prototype._eachWithBreak = function(cb) {
+	var board = this.state; 
+	for (var i = 0; i < board.length; i++) {
+		for (var j = 0; j < board[i].length; j++) {
+			var flag = cb([i,j]);
+			if (!flag) {return;} 
+		}
+	}
+}
+
 Board.prototype._filter = function(cb) {
 	var board = this.state; 
 	for (var i = 0; i < board.length; i++) {
@@ -172,17 +215,7 @@ Board.prototype._map = function(cb) {
 }
 
 Board.prototype._eachOnNeighbors = function(tuple, cb) {
-	var neighbors = [];
-	neighbors.push([tuple[0] + 1, tuple[1]]);
-	neighbors.push([tuple[0] - 1, tuple[1]]);
-	neighbors.push([tuple[0], tuple[1] - 1]);
-	neighbors.push([tuple[0], tuple[1] + 1]);
-	var that = this;
-	neighbors = neighbors.filter(function(e) {
-		return that.isInBounds(e);
-	});
-
-	neighbors.forEach(function(e) {
+	this._getNeighbors(tuple).forEach(function(e) {
 		cb(tuple, e);
 	})
 }
@@ -204,26 +237,51 @@ Board.prototype._filterOnNeighbors = function(tuple, cb) {
 	return results;
 }
 
+Board.prototype._getNeighbors = function(tuple) {
+	var neighbors = [];
+	neighbors.push([tuple[0] + 1, tuple[1]]);
+	neighbors.push([tuple[0] - 1, tuple[1]]);
+	neighbors.push([tuple[0], tuple[1] - 1]);
+	neighbors.push([tuple[0], tuple[1] + 1]);
+	var that = this;
+	return neighbors.filter(function(e) {
+		return that.isInBounds(e);
+	});
+}
+
 Board.prototype._updateIfMatch = function(tuple){
 	var neighborValHash = {};
 	var board = this.state;
 	var flag = false;
 	var that = this;
 	this._eachOnNeighbors(tuple, function(c, n) {
-		if (board[c[0]][c[1]] === board[n[0]][n[1]]) {
+		if (that.op(board[c[0]][c[1]], board[n[0]][n[1]]) === that.target) {
 			flag = true;
 		}
-		neighborValHash[board[n[0]][n[1]]] = true;
+		neighborValHash[board[n[0]][n[1]]] = board[n[0]][n[1]];
 	})
-	flag ? (board[tuple[0]][tuple[1]] = update(board[tuple[0]][tuple[1]])) : null;
+	flag ? (board[tuple[0]][tuple[1]] = update(board[tuple[0]][tuple[1]], that.op, that.target)) : null;
 	
 
 
-	function update(val) {
-		while (val in neighborValHash) {
+	function update(val, fn, target) {
+		var keys = Object.keys(neighborValHash);
+		var hash = {};
+		var flag = false;
+		while(checkAll() && (val in hash)) {
 			val = that.ran();
 		}
 		return val;
+		function checkAll(){
+			for (var i = 0; i < keys.length; i++) {
+
+				if (fn(+val, +keys[i]) === target) {
+					hash[val] = true;
+					return true
+				}
+			}
+			return false;
+		}
 	}
 }
 
@@ -234,8 +292,7 @@ Board.prototype._removeMatches = function() {
 // ----
 var b1 = new Board().create();
 console.log(b1.state);
-b1._removeMatches();
-console.log(b1.state);
+
 
 
 
