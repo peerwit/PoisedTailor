@@ -69,7 +69,6 @@ Board.prototype.operatesToTarget = Board.prototype.operates = function(t1, t2, t
 	var val2 = this._get(t2);
 	var n1 = this._getNeighbors(t1);
 	var n2 = this._getNeighbors(t2);
-	console.log(n1,n2,val1,val2);
 	var flag = n1.some(function(e) {
 		return operation(val2, that._get(e)) === target;
 	});
@@ -92,6 +91,10 @@ Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2, cb){
 	}
 	cb = cb || function(){};
 	var array = this.idMatches(t1, t2).concat(this.idMatches(t2,t1));
+
+	var temp = this._get(t1);
+	this._set(t1, this._get(t2));
+	this._set(t2, temp);
 
 	cb(array);
 	return array;
@@ -142,7 +145,20 @@ Board.prototype._makeBoard = function(m,n) {
 	this.state = this.board = board;
 	this._init();
 	this._removeMatches();
-	this._isPlayable()?console.log("playable"):this._refresh();
+	this._isPlayable()?null:this._refresh();
+	return board;
+}
+
+Board.prototype._regenConsumedNodes = function(array) {
+	var board = this.board;
+	var that = this;
+	console.log(array);
+	array.forEach(function(e) {
+		that._set(e, that.ran());
+	})
+	array.forEach(function(e) {
+		that._updateIfMatch(e);
+	})
 	return board;
 }
 
@@ -158,14 +174,12 @@ Board.prototype._isPlayable = function() {
 		var neighbors = this._getNeighbors(tuple);
 		var that = this;
 		var val = board[tuple[0]][tuple[1]];
-		console.log(val);
 		var flag = neighbors.some(function(e) {
 			var n2s = that._getNeighbors(e);
 			return n2s.some(function(n2e) {
 				return op(val, board[n2e[0]][n2e[1]]) === target;
 			})
 		})
-		console.log(flag);
 		if (flag) {
 			grandFlag = true;
 		}
@@ -261,6 +275,7 @@ Board.prototype._getNeighbors = function(tuple) {
 	});
 }
 
+
 Board.prototype._updateIfMatch = function(tuple){
 	var neighborValHash = {};
 	var board = this.state;
@@ -301,8 +316,6 @@ Board.prototype._removeMatches = function() {
 	this._iterate(this._updateIfMatch.bind(this));
 }
 
-
-
 var readline = require('readline');
 
 var rl = readline.createInterface({
@@ -311,12 +324,12 @@ var rl = readline.createInterface({
 });
 
 rl.question("", function(tuples) {
-	var a = tuples.split(":::")
+	var a = tuples.split("p")
 	var t1 = JSON.parse(a.shift());
 	var t2 = JSON.parse(a.shift());
-	console.log(!!t1.length,t2, typeof t1);
 	console.log("IS VALID", b1.isValidSwap(t1,t2));
-	b1.swap(t1,t2,console.log);
+	b1.swap(t1,t2,b1._regenConsumedNodes.bind(b1));
+	console.log(b1.state);
 	rl.close();
 });
 
