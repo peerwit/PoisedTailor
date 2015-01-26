@@ -322,8 +322,10 @@ rl.question("", function(tuples) {
 
 // ----
 var b1 = new Board().create();
+
 console.log(b1.state, "+++");
 // b1.swap([0,0],[0,1])
+
 
 
 
