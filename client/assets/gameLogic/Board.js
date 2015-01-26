@@ -19,6 +19,9 @@ Board.prototype.get = function(attr) {
 			return this[e];
 		}.bind(this));
 	}
+	else {
+		throw new Error('attribute must be an array or a string')
+	}
 }
 
 	
@@ -362,7 +365,10 @@ console.log(b1.get('state'), "+++");
 
 /* How to use the board api..
 
-Instantiate a new Board (new Board())
+# Instantiate a new Board (new Board())
+# Get Board for rendering
+# Use user DOM events to swap (call isValidSwap before swapping) -- feedback on whether or not isValidSwap should be called is welcome
+# Get Board to re-render 
 
 */
 
