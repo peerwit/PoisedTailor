@@ -2,7 +2,7 @@
 	// v 0.0.1 (01/23/15)
 
 var Board = function() {
-	this.state = [[]];
+	this.state = this.board = [[]];
 }
 	
 Board.prototype.operationsList = Board.prototype.opsList = {
@@ -17,25 +17,13 @@ Board.prototype.operationsList = Board.prototype.opsList = {
 	mod:function (a, b) {return a % b}
 }
 
-Board.prototype.create = function(m,n,operation, difficulty) {
+Board.prototype.create = function(m, n, operation, difficulty) {
 	this.rows = m || 12;
 	this.cols = n || 6;
 	this.op = this.operation = operation || this.opsList.add;
-	this.diff = this.difficulty = difficluty || 1;
-	this.state = this.board = this.makeBoard(this.rows, this.cols);
-	return this.state;
-}
-
-Board.prototype.makeBoard = function(m,n) {
-	var board = [];
-	for(var i = 0; i < m; i++) {
-		board[i] = [];
-		for (var j = 0; j < n; j++) {
-			board[i][j] = null;
-		}
-	}
-	this.init();
-	return board;
+	this.diff = this.difficulty = difficulty || 1;
+	this.state = this.board = this._makeBoard(this.rows, this.cols);
+	return this;
 }
 
 // Come back to if time allows
@@ -45,16 +33,6 @@ Board.prototype.makeBoard = function(m,n) {
 
 // };
 
-Board.prototype.setBoardInit = Board.prototype.init =  function(min, max){
-	this.range = [(min||0), (max||9)];
-	this.target = this.range[0] + this.range[1];
-	var board = this.state;
-	for (var i = 0; i < board.length; i++) {
-		for (var j = 0; j < board[i].length; j++) {
-			board[i][j] = this.ran(); 
-		}
-	}
-}
 
 Board.prototype.getValueAtTuple = Board.prototype.getVal =  function(tuple){
 	return this.board[tuple[0]][tuple[1]];
@@ -85,7 +63,7 @@ Board.prototype.isValidSwap = Board.prototype.isValid = function(t1, t2){
 	}
 }
 
-Board.prototype.operatesToTarget = Board.prototype.operates = function(currentTuple, proposedTuple target, operation, board){
+Board.prototype.operatesToTarget = Board.prototype.operates = function(currentTuple, proposedTuple, target, operation, board){
 	target = target || this.target;
 	operation = operation || this.operation;
 	board = board || this.board;
@@ -94,16 +72,16 @@ Board.prototype.operatesToTarget = Board.prototype.operates = function(currentTu
 }
 
 Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2){
-	if (!t1 || !t2){throw new Error ('cannot call sway without two tuples')}
-	if (typeof t1 !== 'object' || typeof t2 !== 'object'){throw new Error ('cannot call sway without two tuples')}
-	if (!!t1.length || !!t2.length){throw new Error ('cannot call sway without two tuples')}
-	if (t1.length !== 2 || t2.length !== 2){throw new Error ('cannot call sway without two tuples')}
+	if (!t1 || !t2){throw new Error ('cannot call swap without two tuples')}
+	if (typeof t1 !== 'object' || typeof t2 !== 'object'){throw new Error ('cannot call swap without two tuples')}
+	if (!!t1.length || !!t2.length){throw new Error ('cannot call swap without two tuples')}
+	if (t1.length !== 2 || t2.length !== 2){throw new Error ('cannot call swap without two tuples')}
 
 	if (!this.isValidSwap(t1,t2)) {
 		throw new Error ('has inValid swap. Call the isValidSwap fn before calling swap.')
 	}
 
-	
+	return this.idMatches(t1)
 
 }
 
@@ -138,6 +116,120 @@ Board.prototype.d3ify = function(){
 	return al;
 }
 
-var g1 = new Board([[1,2], [0, 2, 3], [1,2], [1]]);
-var g2 = new Board([[3], [3,2], [1], [0,1]]);
-var g3 = new Board([[1,2], [], [1], [1]]);
+
+
+// private methods not intended to be called directly
+Board.prototype._makeBoard = function(m,n) {
+	var board = [];
+	for(var i = 0; i < m; i++) {
+		board[i] = [];
+		for (var j = 0; j < n; j++) {
+			board[i][j] = null;
+		}
+	}
+	this.state = this.board = board;
+	this._init();
+	return board;
+}
+
+Board.prototype._setBoardInit = Board.prototype._init =  function(min, max){
+	this.range = [(min||0), (max||9)];
+	this.target = this.range[0] + this.range[1];
+	var board = this.state;
+	for (var i = 0; i < board.length; i++) {
+		for (var j = 0; j < board[i].length; j++) {
+			board[i][j] = this.ran(); 
+		}
+	}
+	return this;
+}
+
+Board.prototype._iterate = Board.prototype._each = function(cb) {
+	var board = this.state; 
+	for (var i = 0; i < board.length; i++) {
+		for (var j = 0; j < board[i].length; j++) {
+			cb(board[i][j], [i,j]); 
+		}
+	}
+}
+
+Board.prototype._filter = function(cb) {
+	var board = this.state; 
+	for (var i = 0; i < board.length; i++) {
+		for (var j = 0; j < board[i].length; j++) {
+			board[i][j] = cb(board[i][j]) ? board[i][j]: null; 
+		}
+	}
+}
+
+Board.prototype._map = function(cb) {
+	var board = this.state; 
+	for (var i = 0; i < board.length; i++) {
+		for (var j = 0; j < board[i].length; j++) {
+			board[i][j] = cb(board[i][j]); 
+		}
+	}
+}
+
+Board.prototype._eachOnNeighbors = function(tuple, cb) {
+	var neighbors = [];
+	neighbors.push([tuple[0] + 1, tuple[1]]);
+	neighbors.push([tuple[0] - 1, tuple[1]]);
+	neighbors.push([tuple[0], tuple[1] - 1]);
+	neighbors.push([tuple[0], tuple[1] + 1]);
+
+	neighbors = neighbors.filter(function(e) {
+		return this.isInBounds(e);
+	});
+
+	neighbors.forEach(function(e) {
+		cb(tuple, e);
+	})
+}
+
+Board.prototype._filterOnNeighbors = function(tuple, cb) {
+	var neighbors = [];
+	neighbors.push([tuple[0] + 1, tuple[1]]);
+	neighbors.push([tuple[0] - 1, tuple[1]]);
+	neighbors.push([tuple[0], tuple[1] - 1]);
+	neighbors.push([tuple[0], tuple[1] + 1]);
+
+	neighbors = neighbors.filter(function(e) {
+		return this.isInBounds(e);
+	});
+	var results = [];
+	neighbors.forEach(function(e) {
+		results.push(cb(tuple, e));
+	})
+	return results;
+}
+
+Board.prototype._updateIfMatch = function(tuple){
+	
+	var board = this.state;
+	var flag = false;
+	var that = this;
+	this._eachOnNeighbors(function(c, n) {
+		if (board[c[0]][c[1]] === board[n[0]][n[1]]) {
+			flag = true;
+		}
+	})
+	flag ? this._iterate(function(val, tuple) {
+		that._eachOnNeighbors(function(c, n) {
+			
+		})
+	})
+}
+
+Board.prototype._removeMatches = function(cb) {
+	this._iterate()
+}
+
+// ----
+var b1 = new Board().create();
+console.log(b1.state);
+
+
+
+
+
