@@ -148,7 +148,7 @@ Board.prototype._iterate = Board.prototype._each = function(cb) {
 	var board = this.state; 
 	for (var i = 0; i < board.length; i++) {
 		for (var j = 0; j < board[i].length; j++) {
-			cb(board[i][j], [i,j]); 
+			cb([i,j]); 
 		}
 	}
 }
@@ -177,9 +177,9 @@ Board.prototype._eachOnNeighbors = function(tuple, cb) {
 	neighbors.push([tuple[0] - 1, tuple[1]]);
 	neighbors.push([tuple[0], tuple[1] - 1]);
 	neighbors.push([tuple[0], tuple[1] + 1]);
-
+	var that = this;
 	neighbors = neighbors.filter(function(e) {
-		return this.isInBounds(e);
+		return that.isInBounds(e);
 	});
 
 	neighbors.forEach(function(e) {
@@ -205,28 +205,36 @@ Board.prototype._filterOnNeighbors = function(tuple, cb) {
 }
 
 Board.prototype._updateIfMatch = function(tuple){
-	
+	var neighborValHash = {};
 	var board = this.state;
 	var flag = false;
 	var that = this;
-	this._eachOnNeighbors(function(c, n) {
+	this._eachOnNeighbors(tuple, function(c, n) {
 		if (board[c[0]][c[1]] === board[n[0]][n[1]]) {
 			flag = true;
 		}
+		neighborValHash[board[n[0]][n[1]]] = true;
 	})
-	flag ? this._iterate(function(val, tuple) {
-		that._eachOnNeighbors(function(c, n) {
-			
-		})
-	})
+	flag ? (board[tuple[0]][tuple[1]] = update(board[tuple[0]][tuple[1]])) : null;
+	
+
+
+	function update(val) {
+		while (val in neighborValHash) {
+			val = that.ran();
+		}
+		return val;
+	}
 }
 
-Board.prototype._removeMatches = function(cb) {
-	this._iterate()
+Board.prototype._removeMatches = function() {
+	this._iterate(this._updateIfMatch.bind(this));
 }
 
 // ----
 var b1 = new Board().create();
+console.log(b1.state);
+b1._removeMatches();
 console.log(b1.state);
 
 
