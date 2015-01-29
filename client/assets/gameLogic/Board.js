@@ -2,9 +2,9 @@
 	// v 0.0.1 (01/23/15)
 
 // BOARD CLASS - gives you a new playable board
-var Board = function(m, n, operation, difficulty) {
+var Board = function(m, n, operation, target, difficulty) {
 	this.state = this.board = [[]];
-	this._create(m, n, operation, difficulty);
+	this._create(m, n, operation, target, difficulty);
 }
 
 // Takes a string or an array and gets board attributes
@@ -60,7 +60,7 @@ Board.prototype.swap = Board.prototype.makeSwap = function(t1, t2, cb, cb2){
 	cb2 = cb2 || function(){};
 
 	var array = this.idMatches(t1, t2).concat(this.idMatches(t2,t1));
-
+	// console.log("FDs", array, this.idMatches(t1, t2), this.idMatches(t1, t2));
 	// swaps the tuples on the board
 	var temp = this._get(t1);
 	this._set(t1, this._get(t2));
@@ -139,21 +139,16 @@ Board.prototype.idMatches = function(currentTuple, proposedTuple, target, operat
 	var that = this;
 	var tuple = currentTuple;
 	var rA = this._getNeighbors(currentTuple).filter(function(e) {
-		var a = that._get(e);
-		var b = that._get(proposedTuple);
-		return that.op(a,b) === target;
-	}).concat([tuple]);
+		// Check for array deep equality to ensure that the proposedTuple returns false
+		if (JSON.stringify(JSON.parse(JSON.stringify(e))) !== JSON.stringify(JSON.parse(JSON.stringify(proposedTuple)))) {
+			var a = that._get(e);
+			var b = that._get(proposedTuple);
+			return that.op(a,b) === target;
+		}
+		return false
+	}).concat([currentTuple]);
 	return rA.length < 2 ? [] : rA;
 }
-
-Board.prototype.d3ify = function(){
-	var al = this.al;
-	al.map(function(e,i,a) {
-		return {name: i, children: e, somePop: {} }
-	})
-	return al;
-}
-
 
 
 // private methods not intended to be called directly
@@ -184,7 +179,6 @@ Board.prototype._makeBoard = function(m,n) {
 Board.prototype._regenConsumedNodes = function(array) {
 	var board = this.board;
 	var that = this;
-	console.log(array);
 	array.forEach(function(e) {
 		that._set(e, that.ran());
 	})
@@ -220,7 +214,8 @@ Board.prototype._isPlayable = function() {
 }
 
 Board.prototype._refresh = function() {
-	this._create();
+	console.log(this.range, this.rows, this.cols);
+	this._create(this.range[0],this.range[1]);
 }
 
 Board.prototype._setBoardInit = Board.prototype._init =  function(min, max){
@@ -387,7 +382,12 @@ Board.prototype._removeMatches = function() {
 
 
 
-
+var testboard = new Board();
+testboard.board = [[1,0,1,0],[0,0,0,0]];
+console.log(testboard.board)
+testboard.target = 2;
+testboard.swap([0,0],[0,1]);
+console.log(testboard.board);
 
 
 
