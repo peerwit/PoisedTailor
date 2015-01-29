@@ -2,24 +2,33 @@
 
 <header class="hero-unit" id="banner">
   <div class="container">
-    <h1>Math for Life! </h1>
-    <p class="lead">Teaching probability to children...</p>
+    <h1 id="react1">Math for Life!</h1>
+    <table ng-model="board">
+      <tr ng-repeat='row in rows track by $index'>
+        {{console.log(board.state)}}
+        <td>{{board[$index][0]}}</td>
+        <td>{{board[$index][1]}}</td>
+        <td>{{board[$index][2]}}</td>
+        <td>{{board[$index][3]}}</td>
+        <td>{{board[$index][4]}}</td>
+        <td>{{board[$index][5]}}</td>
+      </tr>
+    </table>
     <!-- <img src="assets/images/yeoman.png" alt="I'm Yeoman"> -->
   </div>
 </header>
 
-<div class="container">
+<div class="container-react" >
   <div class="row">
     <div class="col-lg-12">
       <h1 class="page-header">Features:</h1>
       <ul class="nav nav-tabs nav-stacked col-md-4 col-lg-4 col-sm-6" ng-repeat="thing in awesomeThings">
         <li><a href="#" tooltip="{{thing.info}}">{{thing.name}}</a></li>
       </ul>
-      <helloWorld/>
     </div>
   </div>
 </div>
-
+<p id="react"></p>
 <footer class="footer">
   <div class="container">
       <p> A MathForLife Project..</p>
