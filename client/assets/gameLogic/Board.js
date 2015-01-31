@@ -129,7 +129,7 @@ Board.prototype.generateRandom = Board.prototype.ran = function() {
 }
 
 Board.prototype.isInBounds = function(tuple, board) {
-	board = this.board;
+	board = board || this.board;
 	// console.log(board.length - 1, board[0].length - 1);
 	if (+tuple[0] > (board.length - 1) || +tuple[0] < 0 || +tuple[1] > (board[0].length - 1) || +tuple[1] < 0) {
 		return false;
